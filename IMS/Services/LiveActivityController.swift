@@ -46,4 +46,27 @@ enum LiveActivityController {
             }
         }
     }
+
+    #if DEBUG
+    /// 截圖／預覽用：立刻啟動一個示範 Live Activity（不依賴活動日期）。
+    static func startSample() {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        for activity in Activity<MissionActivityAttributes>.activities {
+            Task { await activity.end(nil, dismissalPolicy: .immediate) }
+        }
+        let state = MissionActivityAttributes.ContentState(
+            currentRole: "外場負責人",
+            currentEndDate: Date().addingTimeInterval(25 * 60),
+            currentEndLabel: "10:20",
+            nextRole: "中控室1",
+            nextStartLabel: "7/25 10:30",
+            endPending: false
+        )
+        _ = try? Activity.request(
+            attributes: MissionActivityAttributes(person: "DinDin"),
+            content: ActivityContent(state: state, staleDate: nil),
+            pushType: nil
+        )
+    }
+    #endif
 }
