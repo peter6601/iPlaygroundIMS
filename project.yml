@@ -32,6 +32,8 @@ targets:
       path: IMS/Info.plist
       properties:
         CFBundleDisplayName: IMS
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
         NSSupportsLiveActivities: true
         ITSAppUsesNonExemptEncryption: false
@@ -55,6 +57,8 @@ targets:
       path: IMSWidget/Info.plist
       properties:
         CFBundleDisplayName: IMS Widget
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:
