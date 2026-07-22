@@ -81,3 +81,21 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: IMS
+schemes:
+  IMS:
+    build:
+      targets:
+        IMS: all
+        IMSTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - IMSTests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
