@@ -37,6 +37,12 @@ targets:
         UILaunchScreen: {}
         NSSupportsLiveActivities: true
         ITSAppUsesNonExemptEncryption: false
+        UIRequiresFullScreen: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
     entitlements:
