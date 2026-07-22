@@ -47,6 +47,7 @@ final class AppState {
 
         WidgetCenter.shared.reloadAllTimelines()
         rescheduleNotifications()
+        LiveActivityController.sync(person: selectedPerson, schedule: schedule)
         await rescheduleTask?.value
     }
 
@@ -56,6 +57,7 @@ final class AppState {
         SharedStore.selectedPerson = person
         WidgetCenter.shared.reloadAllTimelines()
         rescheduleNotifications()
+        LiveActivityController.sync(person: person, schedule: schedule)
     }
 
     func clearSelection() {
@@ -63,6 +65,7 @@ final class AppState {
         SharedStore.selectedPerson = nil
         WidgetCenter.shared.reloadAllTimelines()
         rescheduleNotifications()
+        LiveActivityController.endAll()
     }
 
     /// 序列化重排：取消尚未完成的舊工作，並在當下 snapshot blocks。

@@ -5,5 +5,6 @@ import SwiftUI
 struct IMSWidgetBundle: WidgetBundle {
     var body: some Widget {
         MissionWidget()
+        MissionLiveActivity()
     }
 }
