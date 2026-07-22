@@ -15,9 +15,15 @@ struct RawTask: Codable, Hashable {
     let content: String
     let speaker: String
     let title: String
+    /// corrections.js 為場務/待補充/場佈任務組好的「去哪做什麼」完整說明；一般議程任務為空。
+    let duty: String
+    /// corrections.js 標記：工作人員 / 負責人 / 拍照手 / 待補充；一般任務為空。
+    let assignment: String
+    /// 結束時間待定（例如場復）。
+    let endPending: Bool
 
     enum CodingKeys: String, CodingKey {
-        case person, role, day, start, end, content, speaker, title
+        case person, role, day, start, end, content, speaker, title, duty, assignment, endPending
     }
 
     init(from decoder: Decoder) throws {
@@ -30,13 +36,40 @@ struct RawTask: Codable, Hashable {
         content = try c.decodeIfPresent(String.self, forKey: .content) ?? ""
         speaker = try c.decodeIfPresent(String.self, forKey: .speaker) ?? ""
         title = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
+        duty = try c.decodeIfPresent(String.self, forKey: .duty) ?? ""
+        assignment = try c.decodeIfPresent(String.self, forKey: .assignment) ?? ""
+        endPending = try c.decodeIfPresent(Bool.self, forKey: .endPending) ?? false
     }
 
     init(person: String, role: String, day: String, start: String, end: String,
-         content: String = "", speaker: String = "", title: String = "") {
+         content: String = "", speaker: String = "", title: String = "",
+         duty: String = "", assignment: String = "", endPending: Bool = false) {
         self.person = person; self.role = role; self.day = day
         self.start = start; self.end = end
         self.content = content; self.speaker = speaker; self.title = title
+        self.duty = duty; self.assignment = assignment; self.endPending = endPending
+    }
+}
+
+/// 每人的支線任務（對應網站 `source.sideMissions`）。
+struct SideMission: Codable, Hashable {
+    let person: String
+    let title: String
+    let detail: String
+    let link: String?
+
+    enum CodingKeys: String, CodingKey { case person, title, detail, link }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        person = try c.decodeIfPresent(String.self, forKey: .person) ?? ""
+        title = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
+        detail = try c.decodeIfPresent(String.self, forKey: .detail) ?? ""
+        link = try c.decodeIfPresent(String.self, forKey: .link)
+    }
+
+    init(person: String, title: String, detail: String, link: String? = nil) {
+        self.person = person; self.title = title; self.detail = detail; self.link = link
     }
 }
 
@@ -44,6 +77,20 @@ struct RawTask: Codable, Hashable {
 struct OfflineSchedule: Codable, Equatable {
     let people: [String]
     let schedule: [RawTask]
+    let sideMissions: [SideMission]
 
-    static let empty = OfflineSchedule(people: [], schedule: [])
+    enum CodingKeys: String, CodingKey { case people, schedule, sideMissions }
+
+    init(people: [String], schedule: [RawTask], sideMissions: [SideMission] = []) {
+        self.people = people; self.schedule = schedule; self.sideMissions = sideMissions
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        people = try c.decodeIfPresent([String].self, forKey: .people) ?? []
+        schedule = try c.decodeIfPresent([RawTask].self, forKey: .schedule) ?? []
+        sideMissions = try c.decodeIfPresent([SideMission].self, forKey: .sideMissions) ?? []
+    }
+
+    static let empty = OfflineSchedule(people: [], schedule: [], sideMissions: [])
 }

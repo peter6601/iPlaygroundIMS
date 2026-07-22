@@ -15,7 +15,8 @@ enum ScheduleService {
         let source: Source
     }
 
-    /// 載入排班。會嘗試遠端下載並在成功時更新 cache。
+    /// 載入排班。會嘗試遠端下載並在成功時更新 cache 與 Widget 快照。
+    /// 只有 App target 呼叫這裡（會執行 JSCore）；Widget 改讀 `SharedStore.readSnapshot()`。
     static func load() async -> Result {
         // 1) 嘗試遠端
         if let scheduleJS = await fetchRemote(.schedule) {
@@ -24,33 +25,26 @@ enum ScheduleService {
                 SharedStore.writeCachedJS(scheduleJS, kind: .schedule)
                 if let correctionsJS { SharedStore.writeCachedJS(correctionsJS, kind: .corrections) }
                 SharedStore.lastFetched = Date()
+                SharedStore.writeSnapshot(parsed)
                 return Result(schedule: parsed, source: .remote)
             }
         }
 
-        // 2) 退回 cache
+        // 2) 退回 cache（app 之前下載的原始 JS）
         if let scheduleJS = SharedStore.cachedJS(.schedule),
            let parsed = try? ScheduleParser.parse(scheduleJS: scheduleJS,
                                                   correctionsJS: SharedStore.cachedJS(.corrections)) {
+            SharedStore.writeSnapshot(parsed)
             return Result(schedule: parsed, source: .cache)
         }
 
         // 3) 退回 bundle 內建快照
         if let parsed = loadFromBundle() {
+            SharedStore.writeSnapshot(parsed)
             return Result(schedule: parsed, source: .bundle)
         }
 
         return Result(schedule: .empty, source: .bundle)
-    }
-
-    /// 同步版本：只讀 cache → bundle，不連網。Widget extension 用這個。
-    static func loadCachedOrBundle() -> OfflineSchedule {
-        if let scheduleJS = SharedStore.cachedJS(.schedule),
-           let parsed = try? ScheduleParser.parse(scheduleJS: scheduleJS,
-                                                  correctionsJS: SharedStore.cachedJS(.corrections)) {
-            return parsed
-        }
-        return loadFromBundle() ?? .empty
     }
 
     // MARK: - Private

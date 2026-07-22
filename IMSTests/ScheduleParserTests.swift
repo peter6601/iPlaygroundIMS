@@ -47,6 +47,19 @@ final class ScheduleParserTests: XCTestCase {
         XCTAssertFalse(parsed.schedule.contains { $0.person == "ggt" })
     }
 
+    /// corrections.js 會產生 sideMissions，以及帶 duty 字串的場務任務。
+    func testCapturesDutyAndSideMissions() throws {
+        let scheduleJS = try fixture("schedule.bundle")
+        let correctionsJS = try fixture("corrections.bundle")
+
+        let parsed = try ScheduleParser.parse(scheduleJS: scheduleJS, correctionsJS: correctionsJS)
+
+        XCTAssertFalse(parsed.sideMissions.isEmpty, "應解析出支線任務")
+        XCTAssertTrue(parsed.sideMissions.contains { $0.person == "DinDin" })
+        XCTAssertTrue(parsed.schedule.contains { !$0.duty.isEmpty },
+                      "corrections 補的場務任務應帶有 duty 說明")
+    }
+
     func testMissingScheduleThrows() {
         XCTAssertThrowsError(
             try ScheduleParser.parse(scheduleJS: "var x = 1;", correctionsJS: nil)

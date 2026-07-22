@@ -47,6 +47,24 @@ enum SharedStore {
         guard let url = containerURL?.appendingPathComponent(kind.cacheFileName) else { return }
         try? text.write(to: url, atomically: true, encoding: .utf8)
     }
+
+    // MARK: - 已解析快照（供 Widget 純原生讀取，不需執行 JS）
+
+    private static let snapshotFileName = "schedule.snapshot.json"
+
+    /// App 端解析完成後呼叫，把結果寫成 JSON 給 Widget 讀。
+    static func writeSnapshot(_ schedule: OfflineSchedule) {
+        guard let url = containerURL?.appendingPathComponent(snapshotFileName),
+              let data = try? JSONEncoder().encode(schedule) else { return }
+        try? data.write(to: url, options: .atomic)
+    }
+
+    /// Widget（或任何不想跑 JSCore 的地方）讀取已解析的排班。
+    static func readSnapshot() -> OfflineSchedule? {
+        guard let url = containerURL?.appendingPathComponent(snapshotFileName),
+              let data = try? Data(contentsOf: url) else { return nil }
+        return try? JSONDecoder().decode(OfflineSchedule.self, from: data)
+    }
 }
 
 enum ScheduleFileKind: CaseIterable {
