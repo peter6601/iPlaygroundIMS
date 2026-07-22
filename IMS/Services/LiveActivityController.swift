@@ -55,12 +55,13 @@ enum LiveActivityController {
             Task { await activity.end(nil, dismissalPolicy: .immediate) }
         }
         let state = MissionActivityAttributes.ContentState(
-            currentRole: "外場負責人",
-            currentEndDate: Date().addingTimeInterval(25 * 60),
-            currentEndLabel: "10:20",
-            nextRole: "中控室1",
-            nextStartLabel: "7/25 10:30",
-            endPending: false
+            focusRole: "外場負責人",
+            focusTimeLabel: "16:00–17:30",
+            focusDuty: "外場動線與人力調度。",
+            isCurrent: true,
+            focusEndDate: Date().addingTimeInterval(25 * 60),
+            endPending: false,
+            upNext: "便當發放 · 17:30"
         )
         _ = try? Activity.request(
             attributes: MissionActivityAttributes(person: "DinDin"),

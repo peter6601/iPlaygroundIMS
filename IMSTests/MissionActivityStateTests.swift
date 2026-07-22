@@ -37,16 +37,30 @@ final class MissionActivityStateTests: XCTestCase {
         XCTAssertFalse(MissionActivityState.hasActiveWork(person: "X", schedule: s, now: at("D2", "9:00")))
     }
 
-    // ContentState 正確帶入當下與下一場
-    func testContentStateMapping() {
-        let s = schedule([
-            raw("外場", "D1", "9:00", "10:00"),
-            raw("中控", "D1", "10:30", "11:00"),
+    // 進行中：焦點=當下任務，帶時間與 duty，並預告下一場
+    func testContentStateCurrent() {
+        let s = OfflineSchedule(people: ["X"], schedule: [
+            RawTask(person: "X", role: "外場", day: "D1", start: "9:00", end: "10:00",
+                    content: "", duty: "外場動線調度。"),
+            RawTask(person: "X", role: "中控", day: "D1", start: "10:30", end: "11:00"),
         ])
         let slot = MissionActivityState.currentSlot(person: "X", schedule: s, now: at("D1", "9:30"))!
         let state = MissionActivityState.make(from: slot)
-        XCTAssertEqual(state.currentRole, "外場")
-        XCTAssertEqual(state.nextRole, "中控")
-        XCTAssertEqual(state.nextStartLabel, "7/25 10:30")
+        XCTAssertEqual(state.focusRole, "外場")
+        XCTAssertTrue(state.isCurrent)
+        XCTAssertEqual(state.focusTimeLabel, "9:00–10:00")
+        XCTAssertEqual(state.focusDuty, "外場動線調度。")
+        XCTAssertEqual(state.upNext, "中控 · 10:30")
+    }
+
+    // 下一場：焦點=下一個任務，NEXT 狀態、無倒數
+    func testContentStateNext() {
+        let s = schedule([raw("場佈", "D1", "9:00", "10:00")])
+        let slot = MissionActivityState.currentSlot(person: "X", schedule: s, now: at("D1", "8:00"))!
+        let state = MissionActivityState.make(from: slot)
+        XCTAssertEqual(state.focusRole, "場佈")
+        XCTAssertFalse(state.isCurrent)
+        XCTAssertEqual(state.focusTimeLabel, "9:00–10:00")
+        XCTAssertNil(state.focusEndDate)
     }
 }

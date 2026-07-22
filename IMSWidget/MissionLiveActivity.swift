@@ -21,25 +21,32 @@ struct MissionLiveActivity: Widget {
         DynamicIsland {
             DynamicIslandExpandedRegion(.leading) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(state.currentRole ?? state.nextRole ?? "無任務")
-                        .font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.accent)
+                    Text(state.isCurrent ? "NOW" : "NEXT")
+                        .font(.mono(9, .heavy)).foregroundStyle(Theme.accent)
+                    Text(state.focusRole ?? "今日完成")
+                        .font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.ink)
                         .lineLimit(1)
-                    if let start = state.nextStartLabel, state.currentRole != nil {
-                        Text("下一場 \(start)").font(.mono(10)).foregroundStyle(Theme.ink3).lineLimit(1)
+                    if let time = state.focusTimeLabel {
+                        Text(time).font(.mono(11)).foregroundStyle(Theme.accent).lineLimit(1)
                     }
                 }
             }
             DynamicIslandExpandedRegion(.trailing) {
-                if let end = state.currentEndDate, !state.endPending {
+                if state.isCurrent, let end = state.focusEndDate, !state.endPending {
                     Text(timerInterval: Date()...end, countsDown: true)
-                        .font(.mono(15, .bold)).foregroundStyle(Theme.accent)
-                        .monospacedDigit().frame(maxWidth: 64)
+                        .font(.mono(16, .bold)).foregroundStyle(Theme.accent)
+                        .monospacedDigit().frame(maxWidth: 68)
+                }
+            }
+            DynamicIslandExpandedRegion(.bottom) {
+                if let duty = state.focusDuty, !duty.isEmpty {
+                    Text(duty).font(.system(size: 12)).foregroundStyle(Theme.ink2).lineLimit(2)
                 }
             }
         } compactLeading: {
             Circle().fill(Theme.accent).frame(width: 8, height: 8)
         } compactTrailing: {
-            if let end = state.currentEndDate, !state.endPending {
+            if state.isCurrent, let end = state.focusEndDate, !state.endPending {
                 Text(timerInterval: Date()...end, countsDown: true)
                     .font(.mono(12, .bold)).foregroundStyle(Theme.accent)
                     .monospacedDigit().frame(maxWidth: 44)

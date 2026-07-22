@@ -4,14 +4,40 @@ import Foundation
 enum MissionActivityState {
 
     static func make(from slot: MissionSlot) -> MissionActivityAttributes.ContentState {
-        MissionActivityAttributes.ContentState(
-            currentRole: slot.current?.role,
-            currentEndDate: slot.current?.endDate,
-            currentEndLabel: slot.current?.end,
-            nextRole: slot.next?.role,
-            nextStartLabel: slot.next.map { "\(dayShort($0.day)) \($0.start)" },
-            endPending: slot.current?.endPending ?? false
-        )
+        if let cur = slot.current {
+            return MissionActivityAttributes.ContentState(
+                focusRole: cur.role,
+                focusTimeLabel: timeLabel(cur),
+                focusDuty: dutyLine(cur),
+                isCurrent: true,
+                focusEndDate: cur.endPending ? nil : cur.endDate,
+                endPending: cur.endPending,
+                upNext: slot.next.map { "\($0.role) · \($0.start)" }
+            )
+        } else if let nxt = slot.next {
+            return MissionActivityAttributes.ContentState(
+                focusRole: nxt.role,
+                focusTimeLabel: timeLabel(nxt),
+                focusDuty: dutyLine(nxt),
+                isCurrent: false,
+                focusEndDate: nil,
+                endPending: nxt.endPending,
+                upNext: nil
+            )
+        } else {
+            return MissionActivityAttributes.ContentState(
+                focusRole: nil, focusTimeLabel: nil, focusDuty: nil,
+                isCurrent: false, focusEndDate: nil, endPending: false, upNext: nil
+            )
+        }
+    }
+
+    private static func timeLabel(_ b: TaskBlock) -> String {
+        b.endPending ? "\(b.start) 開始" : "\(b.start)–\(b.end)"
+    }
+
+    private static func dutyLine(_ b: TaskBlock) -> String {
+        b.duty.isEmpty ? (b.contents.first ?? "") : b.duty
     }
 
     /// 目前該顯示的 slot：最後一個 date <= now 的切片。
@@ -31,14 +57,5 @@ enum MissionActivityState {
             return next.startDate.timeIntervalSince(now) <= lookahead
         }
         return false
-    }
-
-    private static func dayShort(_ day: String) -> String {
-        switch day {
-        case "D0": return "7/24"
-        case "D1": return "7/25"
-        case "D2": return "7/26"
-        default: return day
-        }
     }
 }
