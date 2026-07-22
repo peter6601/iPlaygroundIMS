@@ -85,9 +85,10 @@ enum ScheduleFileKind: CaseIterable {
     var remoteURL: URL {
         switch self {
         case .schedule:
-            return URL(string: "https://gztin.github.io/iPlayground/staff/data/schedule.js")!
+            // 自有資料流：peter6601/iplayground-staff-data（由 xlsx 產生）
+            return URL(string: "https://peter6601.github.io/iplayground-staff-data/schedule.js")!
         case .corrections:
-            return URL(string: "https://gztin.github.io/iPlayground/staff/data/corrections.js")!
+            return URL(string: "https://peter6601.github.io/iplayground-staff-data/corrections.js")!
         }
     }
 

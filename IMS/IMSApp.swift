@@ -48,6 +48,8 @@ struct RootView: View {
             #if DEBUG
             if ProcessInfo.processInfo.environment["IMS_PREVIEW_BANNER"] != nil {
                 LiveActivityPreviewScreen()
+            } else if ProcessInfo.processInfo.environment["IMS_SHOW_ROSTER"] != nil {
+                RosterView(state: state, onPickPerson: { _ in })
             } else if state.selectedPerson == nil {
                 PersonPickerView(state: state)
             } else {
