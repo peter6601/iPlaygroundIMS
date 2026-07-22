@@ -66,9 +66,14 @@ targets:
     type: bundle.unit-test
     platform: iOS
     sources:
-      - IMSTests
+      - path: IMSTests
+        excludes:
+          - "Fixtures/**"
+      - path: IMSTests/Fixtures
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.peter6601.iplaygroundims.tests
+        GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: IMS
