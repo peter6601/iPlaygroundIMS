@@ -25,8 +25,9 @@ enum ScheduleService {
                 SharedStore.writeCachedJS(scheduleJS, kind: .schedule)
                 if let correctionsJS { SharedStore.writeCachedJS(correctionsJS, kind: .corrections) }
                 SharedStore.lastFetched = Date()
-                SharedStore.writeSnapshot(parsed)
-                return Result(schedule: parsed, source: .remote)
+                let final = withTestData(parsed)
+                SharedStore.writeSnapshot(final)
+                return Result(schedule: final, source: .remote)
             }
         }
 
@@ -34,17 +35,31 @@ enum ScheduleService {
         if let scheduleJS = SharedStore.cachedJS(.schedule),
            let parsed = try? ScheduleParser.parse(scheduleJS: scheduleJS,
                                                   correctionsJS: SharedStore.cachedJS(.corrections)) {
-            SharedStore.writeSnapshot(parsed)
-            return Result(schedule: parsed, source: .cache)
+            let final = withTestData(parsed)
+            SharedStore.writeSnapshot(final)
+            return Result(schedule: final, source: .cache)
         }
 
         // 3) 退回 bundle 內建快照
         if let parsed = loadFromBundle() {
-            SharedStore.writeSnapshot(parsed)
-            return Result(schedule: parsed, source: .bundle)
+            let final = withTestData(parsed)
+            SharedStore.writeSnapshot(final)
+            return Result(schedule: final, source: .bundle)
         }
 
         return Result(schedule: .empty, source: .bundle)
+    }
+
+    /// DEBUG 測試模式：注入 DinDin 今天下午的測試任務（見 TestClock）。
+    private static func withTestData(_ schedule: OfflineSchedule) -> OfflineSchedule {
+        #if DEBUG
+        guard TestClock.testTodayEnabled else { return schedule }
+        return OfflineSchedule(people: schedule.people,
+                               schedule: schedule.schedule + TestClock.dinDinTodayTasks,
+                               sideMissions: schedule.sideMissions)
+        #else
+        return schedule
+        #endif
     }
 
     // MARK: - Private

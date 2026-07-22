@@ -23,7 +23,19 @@ struct TaskBlock: Identifiable, Hashable, Codable {
     private static let taipei = TimeZone(identifier: "Asia/Taipei")!
 
     private func date(from hhmm: String) -> Date {
-        guard let ymd = Self.dayDates[day] else { return .distantFuture }
+        let ymd: (year: Int, month: Int, day: Int)
+        #if DEBUG
+        if TestClock.testTodayEnabled, day == "D0" {
+            ymd = TestClock.todayYMD()
+        } else if let d = Self.dayDates[day] {
+            ymd = d
+        } else {
+            return .distantFuture
+        }
+        #else
+        guard let d = Self.dayDates[day] else { return .distantFuture }
+        ymd = d
+        #endif
         let parts = hhmm.split(separator: ":").compactMap { Int($0) }
         let hour = parts.first ?? 0
         let minute = parts.count > 1 ? parts[1] : 0
