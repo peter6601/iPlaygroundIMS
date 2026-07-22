@@ -7,23 +7,22 @@ struct TaskTimelineView: View {
 
     private var person: String { state.selectedPerson ?? "" }
 
-    private var allBlocks: [TaskBlock] { state.selectedBlocks }
-    private var dayBlocks: [TaskBlock] { allBlocks.filter { $0.day == day } }
-
     var body: some View {
-        SwiftUI.TimelineView(.periodic(from: .now, by: 1)) { context in
-            content(now: context.date)
+        // BlockBuilder 只在 body 求值時算一次；秒級更新交給 nowBadge 的 timerInterval。
+        let dayBlocks = state.selectedBlocks.filter { $0.day == day }
+        return SwiftUI.TimelineView(.periodic(from: .now, by: 60)) { context in
+            content(now: context.date, dayBlocks: dayBlocks)
         }
         .background(Theme.bg)
     }
 
-    private func content(now: Date) -> some View {
+    private func content(now: Date, dayBlocks: [TaskBlock]) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 topBar
                 dayTabs
-                summary
-                blockList(now: now)
+                summary(dayBlocks: dayBlocks)
+                blockList(now: now, dayBlocks: dayBlocks)
                 if !state.selectedMissions.isEmpty {
                     sideMissions
                 }
@@ -70,7 +69,7 @@ struct TaskTimelineView: View {
         }
     }
 
-    private var summary: some View {
+    private func summary(dayBlocks: [TaskBlock]) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(person)
                 .font(.system(size: 34, weight: .heavy))
@@ -83,7 +82,7 @@ struct TaskTimelineView: View {
     }
 
     @ViewBuilder
-    private func blockList(now: Date) -> some View {
+    private func blockList(now: Date, dayBlocks: [TaskBlock]) -> some View {
         if dayBlocks.isEmpty {
             Text("這天沒有排定任務。")
                 .font(.mono(14))
@@ -184,7 +183,7 @@ struct TaskTimelineView: View {
                 .font(.mono(11, .heavy))
                 .foregroundStyle(Theme.accent)
                 .kerning(1)
-            ForEach(Array(state.selectedMissions.enumerated()), id: \.offset) { _, mission in
+            ForEach(state.selectedMissions) { mission in
                 VStack(alignment: .leading, spacing: 4) {
                     Text(mission.title)
                         .font(.system(size: 15, weight: .semibold))
@@ -219,6 +218,13 @@ struct TaskTimelineView: View {
         .padding(.top, 10)
     }
 
+    private static let footerDateFormatter: DateFormatter = {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "MM/dd HH:mm"
+        fmt.timeZone = TimeZone(identifier: "Asia/Taipei")
+        return fmt
+    }()
+
     private var footerText: String {
         let sourceLabel: String
         switch state.source {
@@ -227,9 +233,6 @@ struct TaskTimelineView: View {
         case .bundle: sourceLabel = "內建版本"
         }
         guard let date = state.lastFetched else { return "資料來源：\(sourceLabel)" }
-        let fmt = DateFormatter()
-        fmt.dateFormat = "MM/dd HH:mm"
-        fmt.timeZone = TimeZone(identifier: "Asia/Taipei")
-        return "資料 \(fmt.string(from: date)) 更新 · \(sourceLabel)"
+        return "資料 \(Self.footerDateFormatter.string(from: date)) 更新 · \(sourceLabel)"
     }
 }

@@ -56,6 +56,7 @@ final class NotificationScheduler {
     }
 
     /// 清掉舊的、依 blocks 重排所有未來提醒。
+    /// 呼叫端（AppState）會把本函式包在可取消的 Task 中並序列化，避免重排交織。
     func reschedule(blocks: [TaskBlock], now: Date = Date()) async {
         center.removeAllPendingNotificationRequests()
         guard !blocks.isEmpty else { return }
@@ -65,31 +66,34 @@ final class NotificationScheduler {
         if settings.authorizationStatus == .notDetermined {
             _ = await requestAuthorization()
         }
+        guard !Task.isCancelled else { return }
 
-        var requests: [UNNotificationRequest] = []
+        // 收集 (fireDate, request)，之後統一依時間排序再套上限，語意才正確。
+        var pending: [(fireDate: Date, request: UNNotificationRequest)] = []
 
-        // 每日摘要
         for summary in NotificationPlan.daySummaries(blocks, now: now) {
             let content = UNMutableNotificationContent()
             content.title = "今天有 \(summary.count) 段任務"
             content.body = "第一個任務 \(summary.firstStart) 開始，記得提前到場。"
             content.sound = .default
-            requests.append(request(id: "day-\(summary.day)", fireDate: summary.fireDate, content: content))
+            pending.append((summary.fireDate, request(id: "day-\(summary.day)", fireDate: summary.fireDate, content: content)))
         }
 
-        // 各任務提醒（提前 10 分）
         for block in NotificationPlan.upcoming(blocks, now: now) {
             let content = UNMutableNotificationContent()
             content.title = "10 分鐘後 · \(block.role)"
             content.body = notificationBody(for: block)
             content.sound = .default
-            requests.append(request(id: block.id, fireDate: NotificationPlan.fireDate(for: block), content: content))
+            let fire = NotificationPlan.fireDate(for: block)
+            pending.append((fire, request(id: block.id, fireDate: fire, content: content)))
         }
 
-        // 上限保護：保留最早的前 N 則
-        let capped = Array(requests.prefix(NotificationPlan.maxNotifications))
-        for req in capped {
-            try? await center.add(req)
+        // 上限保護：真的取最早的前 N 則
+        let capped = pending.sorted { $0.fireDate < $1.fireDate }
+            .prefix(NotificationPlan.maxNotifications)
+        for item in capped {
+            guard !Task.isCancelled else { return }
+            try? await center.add(item.request)
         }
     }
 
@@ -102,7 +106,9 @@ final class NotificationScheduler {
     private func request(id: String, fireDate: Date, content: UNNotificationContent) -> UNNotificationRequest {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone(identifier: "Asia/Taipei")!
-        let comps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
+        var comps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
+        // 帶上時區，否則 trigger 會用裝置當前時區解讀 wall-clock（人在非台北時區會響錯時間）。
+        comps.timeZone = TimeZone(identifier: "Asia/Taipei")
         let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
         return UNNotificationRequest(identifier: id, content: content, trigger: trigger)
     }

@@ -60,10 +60,11 @@ struct PersonPickerView: View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(Theme.ink3)
-            TextField("", text: $query, prompt: Text("搜尋姓名，例如 Hokila").foregroundColor(Theme.ink3))
+            TextField("", text: $query, prompt: Text("搜尋姓名，例如 Hokila").foregroundStyle(Theme.ink3))
                 .foregroundStyle(Theme.ink)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
+                .accessibilityLabel("搜尋姓名")
             if !query.isEmpty {
                 Button { query = "" } label: {
                     Image(systemName: "xmark.circle.fill").foregroundStyle(Theme.ink3)
@@ -77,7 +78,7 @@ struct PersonPickerView: View {
     }
 
     private func personCard(_ person: String) -> some View {
-        let count = BlockBuilder.blocks(for: person, in: state.schedule.schedule).count
+        let count = state.taskCounts[person] ?? 0
         return Button {
             state.select(person)
         } label: {

@@ -52,11 +52,13 @@ struct RawTask: Codable, Hashable {
 }
 
 /// 每人的支線任務（對應網站 `source.sideMissions`）。
-struct SideMission: Codable, Hashable {
+struct SideMission: Codable, Hashable, Identifiable {
     let person: String
     let title: String
     let detail: String
     let link: String?
+
+    var id: String { "\(person)|\(title)" }
 
     enum CodingKeys: String, CodingKey { case person, title, detail, link }
 
