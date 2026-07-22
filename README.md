@@ -37,6 +37,30 @@ curl -s https://gztin.github.io/iPlayground/staff/data/corrections.js -o IMS/Res
 # Widget 的 snapshot.bundle.json 由 scripts 重新產生（見 git 歷史的 gen.swift）
 ```
 
+## 互動模型：檢視 vs 開啟提醒
+
+- **選名字＝只看行程**，不會啟動任何提醒（可以放心瀏覽別人的行程）。
+- 任務畫面上的 **「這是我 · 開啟提醒」** 開關才會：請求通知授權、排本人的通知、啟動 Live Activity，
+  並把這個人記成本人（`activatedPerson`，持久化）。
+- Widget / 本地通知 / Live Activity 一律以 `activatedPerson` 為準；按「關閉」即取消全部。
+
+## 真機測試（活動日以外也能測）
+
+Live Activity / Dynamic Island / 本地通知**必須真機**測（模擬器不 render Live Activity）。
+用 `IMS_TEST_TODAY` 讓 D0 變成「今天」並注入 DinDin 今天 15:00–20:00 的測試任務：
+
+1. Xcode → Edit Scheme → Run → Arguments → Environment Variables，新增 `IMS_TEST_TODAY = 1`。
+2. 選 **IMS** scheme、destination 選你的 iPhone，Run。
+3. app 內選 **DinDin** → 按 **「這是我 · 開啟提醒」** → 允許通知。
+4. 預期：任務前 10 分鐘收到通知（14:50 / 15:50 / 17:20 / 18:20）；進行中任務會有 Live Activity +
+   Dynamic Island 倒數（下午 3–8 點之間）。
+5. 測完把該環境變數的勾勾取消即可回正常資料。
+
+> 註：`IMS_TEST_TODAY` 只影響 App 行程，Widget（獨立行程）仍以真實 D0=7/24 計算，
+> 所以 Widget 的「今日測試」需在真正活動日驗證。其餘 debug 旗標：
+> `IMS_PRESELECT=<名字>`（預選檢視）、`IMS_ACTIVATE=1`（順便開啟提醒）、
+> `IMS_PREVIEW_BANNER=1`（Live Activity 版面預覽）、`IMS_TEST_LIVEACTIVITY=1`（強制啟一個示範）。
+
 ## TestFlight 上架
 
 > 目標：今天送 Beta App Review，外部 TestFlight 首個 build 通常 24–48h 過審，
