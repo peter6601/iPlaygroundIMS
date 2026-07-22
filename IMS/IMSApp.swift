@@ -18,10 +18,13 @@ struct IMSApp: App {
                     }
                     #endif
                     await state.refresh()
-                    // 測試/截圖用：以環境變數預選人員（production 不會設定）
-                    if let preselect = ProcessInfo.processInfo.environment["IMS_PRESELECT"],
-                       state.selectedPerson == nil {
+                    // 測試/截圖用（production 不會設定）：
+                    // IMS_PRESELECT 只檢視；再加 IMS_ACTIVATE 才開啟提醒。
+                    if let preselect = ProcessInfo.processInfo.environment["IMS_PRESELECT"] {
                         state.select(preselect)
+                        if ProcessInfo.processInfo.environment["IMS_ACTIVATE"] != nil {
+                            await state.activateSelected()
+                        }
                     }
                 }
                 .onChange(of: scenePhase) { _, phase in

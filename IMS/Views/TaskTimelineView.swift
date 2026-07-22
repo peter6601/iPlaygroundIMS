@@ -22,6 +22,7 @@ struct TaskTimelineView: View {
                 topBar
                 dayTabs
                 summary(dayBlocks: dayBlocks)
+                activationControl
                 blockList(now: now, dayBlocks: dayBlocks)
                 if !state.selectedMissions.isEmpty {
                     sideMissions
@@ -79,6 +80,46 @@ struct TaskTimelineView: View {
                 .foregroundStyle(Theme.ink3)
         }
         .padding(.top, 2)
+    }
+
+    @ViewBuilder
+    private var activationControl: some View {
+        if state.isSelectedActivated {
+            // 已開啟提醒（本人）
+            HStack(spacing: 10) {
+                Image(systemName: "bell.fill").foregroundStyle(Theme.accent)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("提醒已開啟（這是你）")
+                        .font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.ink)
+                    Text("任務前 10 分鐘通知 · Widget · Live Activity")
+                        .font(.mono(11)).foregroundStyle(Theme.ink3)
+                }
+                Spacer()
+                Button("關閉") { state.deactivate() }
+                    .font(.mono(13, .medium))
+                    .foregroundStyle(Theme.ink2)
+            }
+            .padding(14)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.accent.opacity(0.5), lineWidth: 1))
+        } else {
+            // 尚未開啟：明確的「這是我」按鈕
+            Button {
+                Task { await state.activateSelected() }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "bell.badge.fill")
+                    Text("這是我 · 開啟提醒")
+                        .font(.system(size: 16, weight: .bold))
+                    Spacer()
+                    Image(systemName: "arrow.right")
+                }
+                .foregroundStyle(Theme.bg)
+                .padding(.horizontal, 16).padding(.vertical, 14)
+                .background(Theme.accent, in: RoundedRectangle(cornerRadius: 14))
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     @ViewBuilder

@@ -20,13 +20,13 @@ struct MissionProvider: TimelineProvider {
 
     func getSnapshot(in context: Context, completion: @escaping (MissionEntry) -> Void) {
         let schedule = WidgetData.loadSchedule()
-        let entries = WidgetData.entries(person: SharedStore.selectedPerson, schedule: schedule, now: Date())
+        let entries = WidgetData.entries(person: SharedStore.activatedPerson, schedule: schedule, now: Date())
         completion(entries.first ?? placeholder(in: context))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<MissionEntry>) -> Void) {
         let schedule = WidgetData.loadSchedule()
-        let entries = WidgetData.entries(person: SharedStore.selectedPerson, schedule: schedule, now: Date())
+        let entries = WidgetData.entries(person: SharedStore.activatedPerson, schedule: schedule, now: Date())
         completion(Timeline(entries: entries, policy: .atEnd))
     }
 }
@@ -63,7 +63,7 @@ struct MissionWidgetView: View {
     @ViewBuilder private var needsSetup: some View {
         VStack(spacing: 4) {
             Text("IMS").font(.mono(20, .heavy)).foregroundStyle(Theme.accent)
-            Text("開啟 App 選擇名字").font(.mono(11)).foregroundStyle(Theme.ink2)
+            Text("開 App 開啟提醒").font(.mono(11)).foregroundStyle(Theme.ink2)
         }
     }
 
@@ -135,7 +135,7 @@ struct MissionWidgetView: View {
     // accessoryRectangular（鎖屏）
     @ViewBuilder private var rectangular: some View {
         if entry.person == nil {
-            Text("IMS · 開啟 App 選名字").font(.system(size: 13))
+            Text("IMS · 開 App 開啟提醒").font(.system(size: 13))
         } else if let current = entry.current {
             VStack(alignment: .leading, spacing: 2) {
                 Text("▶ \(current.role)").font(.system(size: 15, weight: .bold)).lineLimit(1)

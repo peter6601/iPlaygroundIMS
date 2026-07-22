@@ -2,8 +2,9 @@ import Foundation
 import Observation
 import WidgetKit
 
-/// App 的中央狀態：管理排班資料、選定人員，並在資料/選擇變動時
-/// 重載 Widget timeline，以及重排本地通知。
+/// App 的中央狀態。
+/// - `selectedPerson`：目前檢視中的人（純導覽，不啟動任何提醒）
+/// - `activatedPerson`：已「開啟提醒」並鎖定為本人的人（通知 / Widget / Live Activity 依此）
 @MainActor
 @Observable
 final class AppState {
@@ -12,29 +13,39 @@ final class AppState {
     private(set) var lastFetched: Date? = SharedStore.lastFetched
     private(set) var isLoading = false
     private(set) var selectedPerson: String? = SharedStore.selectedPerson
+    private(set) var activatedPerson: String? = SharedStore.activatedPerson
 
     /// 各人員的值勤段數，於資料載入後預先算好（避免每張卡片重算）。
     private(set) var taskCounts: [String: Int] = [:]
 
-    /// 目前進行中的重排工作；新的一律取消舊的，確保序列化。
     private var rescheduleTask: Task<Void, Never>?
 
-    /// 可選擇的人員（活動工作人員名單）。
     var people: [String] { schedule.people }
 
-    /// 目前選定人員的值勤區塊。
+    /// 目前檢視人員的值勤區塊（給 timeline 顯示）。
     var selectedBlocks: [TaskBlock] {
         guard let selectedPerson else { return [] }
         return BlockBuilder.blocks(for: selectedPerson, in: schedule.schedule)
     }
 
-    /// 目前選定人員的支線任務。
     var selectedMissions: [SideMission] {
         guard let selectedPerson else { return [] }
         return schedule.sideMissions.filter { $0.person == selectedPerson }
     }
 
-    /// 抓取最新排班（遠端 → cache → bundle），更新 UI、Widget 與通知。
+    /// 目前檢視的人是否就是已開啟提醒的本人。
+    var isSelectedActivated: Bool {
+        selectedPerson != nil && selectedPerson == activatedPerson
+    }
+
+    /// 已開啟提醒本人的值勤區塊（通知 / Live Activity 依此）。
+    private var activatedBlocks: [TaskBlock] {
+        guard let activatedPerson else { return [] }
+        return BlockBuilder.blocks(for: activatedPerson, in: schedule.schedule)
+    }
+
+    // MARK: - 載入
+
     func refresh() async {
         guard !isLoading else { return }
         isLoading = true
@@ -47,31 +58,51 @@ final class AppState {
 
         WidgetCenter.shared.reloadAllTimelines()
         rescheduleNotifications()
-        LiveActivityController.sync(person: selectedPerson, schedule: schedule)
+        LiveActivityController.sync(person: activatedPerson, schedule: schedule)
         await rescheduleTask?.value
     }
+
+    // MARK: - 檢視（不啟動提醒）
 
     func select(_ person: String) {
         guard people.contains(person) else { return }
         selectedPerson = person
         SharedStore.selectedPerson = person
-        WidgetCenter.shared.reloadAllTimelines()
-        rescheduleNotifications()
-        LiveActivityController.sync(person: person, schedule: schedule)
     }
 
     func clearSelection() {
         selectedPerson = nil
         SharedStore.selectedPerson = nil
+    }
+
+    // MARK: - 開啟 / 關閉提醒（本人）
+
+    /// 把目前檢視的人設為本人並開啟提醒（請求授權、排通知、啟動 Live Activity）。
+    func activateSelected() async {
+        guard let selectedPerson else { return }
+        activatedPerson = selectedPerson
+        SharedStore.activatedPerson = selectedPerson
+
+        _ = await NotificationScheduler.shared.requestAuthorization()
         WidgetCenter.shared.reloadAllTimelines()
         rescheduleNotifications()
+        LiveActivityController.sync(person: activatedPerson, schedule: schedule)
+    }
+
+    /// 關閉提醒：取消通知、結束 Live Activity。
+    func deactivate() {
+        activatedPerson = nil
+        SharedStore.activatedPerson = nil
+        WidgetCenter.shared.reloadAllTimelines()
+        rescheduleNotifications()          // blocks 為空 → 清掉所有通知
         LiveActivityController.endAll()
     }
 
-    /// 序列化重排：取消尚未完成的舊工作，並在當下 snapshot blocks。
+    // MARK: - Private
+
     private func rescheduleNotifications() {
         rescheduleTask?.cancel()
-        let blocks = selectedBlocks
+        let blocks = activatedBlocks
         rescheduleTask = Task {
             guard !Task.isCancelled else { return }
             await NotificationScheduler.shared.reschedule(blocks: blocks)

@@ -17,12 +17,23 @@ enum SharedStore {
     // MARK: - 選定人員
 
     private static let selectedPersonKey = "selectedPerson"
+    private static let activatedPersonKey = "activatedPerson"
 
+    /// 目前「檢視中」的人（導覽狀態，不代表開啟提醒）。
     static var selectedPerson: String? {
         get { defaults?.string(forKey: selectedPersonKey) }
         set {
             if let newValue { defaults?.set(newValue, forKey: selectedPersonKey) }
             else { defaults?.removeObject(forKey: selectedPersonKey) }
+        }
+    }
+
+    /// 已「開啟提醒」並鎖定為本人的人。Widget / 通知 / Live Activity 都以此為準。
+    static var activatedPerson: String? {
+        get { defaults?.string(forKey: activatedPersonKey) }
+        set {
+            if let newValue { defaults?.set(newValue, forKey: activatedPersonKey) }
+            else { defaults?.removeObject(forKey: activatedPersonKey) }
         }
     }
 
