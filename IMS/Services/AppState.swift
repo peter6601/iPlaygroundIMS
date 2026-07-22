@@ -87,6 +87,13 @@ final class AppState {
         WidgetCenter.shared.reloadAllTimelines()
         rescheduleNotifications()
         LiveActivityController.sync(person: activatedPerson, schedule: schedule)
+
+        #if DEBUG
+        // 測試模式：開啟提醒後 15 秒送一則確認用推播，方便當場驗證通知有通。
+        if TestClock.testTodayEnabled {
+            await NotificationScheduler.shared.scheduleTestNotification(after: 15)
+        }
+        #endif
     }
 
     /// 關閉提醒：取消通知、結束 Live Activity。

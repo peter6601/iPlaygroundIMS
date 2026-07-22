@@ -60,6 +60,13 @@ struct LiveActivityLockScreenView: View {
                     Text("剩餘").font(.mono(10)).foregroundStyle(Theme.ink3)
                 }
             }
+        } else if let start = state.focusStartDate {
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(timerInterval: Date()...start, countsDown: true)
+                    .font(.mono(20, .heavy)).foregroundStyle(Theme.accent)
+                    .monospacedDigit().frame(maxWidth: 92)
+                Text("後開始").font(.mono(10)).foregroundStyle(Theme.ink3)
+            }
         }
     }
 }

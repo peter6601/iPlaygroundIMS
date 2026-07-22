@@ -32,10 +32,12 @@ struct MissionLiveActivity: Widget {
                 }
             }
             DynamicIslandExpandedRegion(.trailing) {
-                if state.isCurrent, let end = state.focusEndDate, !state.endPending {
-                    Text(timerInterval: Date()...end, countsDown: true)
-                        .font(.mono(16, .bold)).foregroundStyle(Theme.accent)
-                        .monospacedDigit().frame(maxWidth: 68)
+                VStack(alignment: .trailing, spacing: 1) {
+                    islandCountdown(state, font: .mono(16, .bold))
+                    if state.focusRole != nil {
+                        Text(state.isCurrent ? "剩餘" : "後開始")
+                            .font(.mono(8)).foregroundStyle(Theme.ink3)
+                    }
                 }
             }
             DynamicIslandExpandedRegion(.bottom) {
@@ -46,13 +48,21 @@ struct MissionLiveActivity: Widget {
         } compactLeading: {
             Circle().fill(Theme.accent).frame(width: 8, height: 8)
         } compactTrailing: {
-            if state.isCurrent, let end = state.focusEndDate, !state.endPending {
-                Text(timerInterval: Date()...end, countsDown: true)
-                    .font(.mono(12, .bold)).foregroundStyle(Theme.accent)
-                    .monospacedDigit().frame(maxWidth: 44)
-            }
+            islandCountdown(state, font: .mono(12, .bold))
         } minimal: {
             Circle().fill(Theme.accent).frame(width: 8, height: 8)
+        }
+    }
+
+    /// 進行中→倒數到結束；下一場→倒數到開始。
+    @ViewBuilder
+    private func islandCountdown(_ state: MissionActivityAttributes.ContentState, font: Font) -> some View {
+        if state.isCurrent, let end = state.focusEndDate, !state.endPending {
+            Text(timerInterval: Date()...end, countsDown: true)
+                .font(font).foregroundStyle(Theme.accent).monospacedDigit().frame(maxWidth: 52)
+        } else if !state.isCurrent, let start = state.focusStartDate {
+            Text(timerInterval: Date()...start, countsDown: true)
+                .font(font).foregroundStyle(Theme.accent).monospacedDigit().frame(maxWidth: 52)
         }
     }
 }

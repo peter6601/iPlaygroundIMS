@@ -114,15 +114,15 @@ final class NotificationScheduler {
     }
 
     #if DEBUG
-    /// 手動驗證用：排一則 N 秒後的測試通知。
-    func scheduleTestNotification(after seconds: TimeInterval = 8) async {
+    /// 測試用：排一則 N 秒後的測試通知，確認推播管線與授權正常。
+    func scheduleTestNotification(after seconds: TimeInterval = 15) async {
         _ = await requestAuthorization()
         let content = UNMutableNotificationContent()
-        content.title = "測試提醒 · 中控室1"
-        content.body = "9:00–10:30\n負責執行「中控」相關工作與現場交接。"
+        content.title = "✅ 推播測試 · 已開啟提醒"
+        content.body = "這是確認用測試通知，代表通知已可正常送達。真正的任務提醒會在每段任務前 10 分鐘送出。"
         content.sound = .default
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
-        try? await center.add(UNNotificationRequest(identifier: "test", content: content, trigger: trigger))
+        try? await center.add(UNNotificationRequest(identifier: "test-ping", content: content, trigger: trigger))
     }
     #endif
 }

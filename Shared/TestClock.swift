@@ -8,9 +8,10 @@ import Foundation
 /// 注意：Widget extension 是獨立行程、拿不到這個環境變數，所以 Widget 仍會用真實 D0 日期；
 /// 通知與 Live Activity 由 App 端計算，會正確使用「今天」。
 enum TestClock {
-    static var testTodayEnabled: Bool {
-        ProcessInfo.processInfo.environment["IMS_TEST_TODAY"] != nil
-    }
+    /// 暫時的測試開關。目前設為 true → DEBUG 建置永遠注入 DinDin 今日測試任務，
+    /// 你用 Xcode 裝一次到手機後可拔線整天測試（Widget 也吃得到）。
+    /// 測完把這行改回 `ProcessInfo...["IMS_TEST_TODAY"] != nil` 或整個測試機制刪掉。
+    static let testTodayEnabled = true
 
     /// 今天（Asia/Taipei）的年月日。
     static func todayYMD() -> (year: Int, month: Int, day: Int) {

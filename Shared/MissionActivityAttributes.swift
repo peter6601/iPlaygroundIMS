@@ -13,6 +13,8 @@ struct MissionActivityAttributes: ActivityAttributes {
         var focusDuty: String?
         /// 焦點是否進行中（true = NOW，false = NEXT）。
         var isCurrent: Bool
+        /// 焦點任務開始時間（NEXT 狀態用於倒數到開始）。
+        var focusStartDate: Date?
         /// 進行中才有，用於倒數到結束。
         var focusEndDate: Date?
         var endPending: Bool

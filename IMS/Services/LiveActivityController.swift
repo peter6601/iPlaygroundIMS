@@ -59,6 +59,7 @@ enum LiveActivityController {
             focusTimeLabel: "16:00–17:30",
             focusDuty: "外場動線與人力調度。",
             isCurrent: true,
+            focusStartDate: Date().addingTimeInterval(-5 * 60),
             focusEndDate: Date().addingTimeInterval(25 * 60),
             endPending: false,
             upNext: "便當發放 · 17:30"

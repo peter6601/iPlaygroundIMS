@@ -10,6 +10,7 @@ enum MissionActivityState {
                 focusTimeLabel: timeLabel(cur),
                 focusDuty: dutyLine(cur),
                 isCurrent: true,
+                focusStartDate: cur.startDate,
                 focusEndDate: cur.endPending ? nil : cur.endDate,
                 endPending: cur.endPending,
                 upNext: slot.next.map { "\($0.role) · \($0.start)" }
@@ -20,6 +21,7 @@ enum MissionActivityState {
                 focusTimeLabel: timeLabel(nxt),
                 focusDuty: dutyLine(nxt),
                 isCurrent: false,
+                focusStartDate: nxt.startDate,
                 focusEndDate: nil,
                 endPending: nxt.endPending,
                 upNext: nil
@@ -27,7 +29,8 @@ enum MissionActivityState {
         } else {
             return MissionActivityAttributes.ContentState(
                 focusRole: nil, focusTimeLabel: nil, focusDuty: nil,
-                isCurrent: false, focusEndDate: nil, endPending: false, upNext: nil
+                isCurrent: false, focusStartDate: nil, focusEndDate: nil,
+                endPending: false, upNext: nil
             )
         }
     }
