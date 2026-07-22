@@ -37,27 +37,28 @@ curl -s https://gztin.github.io/iPlayground/staff/data/corrections.js -o IMS/Res
 # Widget 的 snapshot.bundle.json 由 scripts 重新產生（見 git 歷史的 gen.swift）
 ```
 
-## TestFlight 上架（需 DinDin 手動）
+## TestFlight 上架
 
 > 目標：今天送 Beta App Review，外部 TestFlight 首個 build 通常 24–48h 過審，
 > 過審後開 public link 給 34 位工作人員。
 
-1. **Apple 帳號**：用付費 Apple Developer 帳號登入 Xcode（Settings → Accounts）。
-2. **App Group**：到 developer.apple.com → Identifiers 建 App Group `group.io.iplayground.ims`，
-   並確認兩個 App ID（`com.peter6601.iplaygroundims` 與 `.widget`）都勾選加入該 group。
-   （若此 ID 已被占用，改 `group.com.peter6601.iplaygroundims`，把 `Shared/Schedule.swift`
-   的 `appGroupID` 與 `project.yml` 兩處 entitlements 一起改，再 `xcodegen generate`。）
-3. **Signing**：Xcode 選 IMS 與 IMSWidget 兩個 target → Signing & Capabilities → 勾 Automatically manage signing、
-   選 Team。
-4. **App Store Connect**：建立新 app record（Bundle ID `com.peter6601.iplaygroundims`）。
-5. **Archive**：Xcode → Product → Destination 選「Any iOS Device」→ Product → Archive → Distribute App → App Store Connect → Upload。
-6. **TestFlight**：填 Test Information（測試說明、聯絡人），建 External group，加入 build，
-   Submit for Beta Review。過審後開 **Public Link** 貼到工作人員群組。
-7. **提醒工作人員**：安裝後選自己的名字、允許通知；建議把 IMS 通知設「立即傳送」，活動日避免開專注模式。
+**一個 build 含全部功能**（任務表＋通知＋Widget＋Live Activity）。當初規劃的「Build 1／Build 2」
+已合併——Live Activity 是標準功能、審核風險低，不需拆兩次上傳。
 
-### Build 2（Live Activity，等 Build 1 審核時做）
+**已驗證（2026/07/22）**：
+- Team 已設 `QD39SW5YJ4`（寫在 `project.yml`，`xcodegen generate` 不會掉）。
+- CLI `xcodebuild archive -allowProvisioningUpdates` 成功：自動簽章、provisioning、
+  App Group `group.io.iplayground.ims` 皆自動建好並簽入 app + widget。
+- 版本 1.0.0 / build 1，app 與 widget 一致；icon 1024² 無 alpha；出口加密合規已設。
 
-Live Activity 進第二個 build（同版號後續 build 通常自動過、不重審），先求核心功能卡位過審。
+**剩下需要你在 App Store Connect 手動做的：**
+1. **建 app record**：appstoreconnect.apple.com → Apps → ＋ → New App，Bundle ID `com.peter6601.iplaygroundims`。
+2. **上傳**：Xcode → Product → Archive → Organizer → Distribute App → App Store Connect → Upload。
+   （簽章已驗證可過，Archive 會成功。）
+3. **隱私標籤**：選「**不收集資料**」（app 只讀 gztin 公開網站，不上傳任何個資）。
+4. **TestFlight**：填 Test Information → 建 External group → 加入 build → Submit for Beta Review。
+   過審後開 **Public Link** 貼工作人員群組。
+5. **提醒工作人員**：安裝後選自己的名字、允許通知；建議把 IMS 通知設「立即傳送」，活動日避免開專注模式。
 
 ## 授權
 
