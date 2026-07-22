@@ -19,22 +19,38 @@ final class MissionActivityStateTests: XCTestCase {
         XCTAssertTrue(MissionActivityState.hasActiveWork(person: "X", schedule: s, now: at("D1", "9:30")))
     }
 
-    // 下一場在 3 小時內 → 需要
-    func testActiveWhenNextSoon() {
-        let s = schedule([raw("外場", "D1", "9:00", "10:00")])
-        XCTAssertTrue(MissionActivityState.hasActiveWork(person: "X", schedule: s, now: at("D1", "7:00")))
+    // 活動日常駐：任務之間的空檔也要顯示
+    func testActiveInGapBetweenTasks() {
+        let s = schedule([
+            raw("早", "D1", "9:00", "10:00"),
+            raw("午", "D1", "13:00", "14:00"),
+        ])
+        // 11:30 是兩場之間的空檔，仍在當天值勤窗內
+        XCTAssertTrue(MissionActivityState.hasActiveWork(person: "X", schedule: s, now: at("D1", "11:30")))
     }
 
-    // 下一場還很遠（兩天前）→ 不需要
-    func testInactiveWhenNextFarAway() {
+    // 當天第一場前 1 小時內 → 需要（開場前就常駐）
+    func testActiveWithinPreLead() {
+        let s = schedule([raw("外場", "D1", "9:00", "10:00")])
+        XCTAssertTrue(MissionActivityState.hasActiveWork(person: "X", schedule: s, now: at("D1", "8:15")))
+    }
+
+    // 當天第一場前太早（>1 小時）→ 還不需要
+    func testInactiveTooEarly() {
+        let s = schedule([raw("外場", "D1", "9:00", "10:00")])
+        XCTAssertFalse(MissionActivityState.hasActiveWork(person: "X", schedule: s, now: at("D1", "6:00")))
+    }
+
+    // 非當天（例如 D1 的任務、now 在 D0）→ 不需要
+    func testInactiveOnOtherDay() {
         let s = schedule([raw("外場", "D1", "9:00", "10:00")])
         XCTAssertFalse(MissionActivityState.hasActiveWork(person: "X", schedule: s, now: at("D0", "9:00")))
     }
 
-    // 任務全部結束 → 不需要
-    func testInactiveWhenAllDone() {
+    // 當天任務全部結束 → 收掉
+    func testInactiveWhenDayDone() {
         let s = schedule([raw("外場", "D1", "9:00", "10:00")])
-        XCTAssertFalse(MissionActivityState.hasActiveWork(person: "X", schedule: s, now: at("D2", "9:00")))
+        XCTAssertFalse(MissionActivityState.hasActiveWork(person: "X", schedule: s, now: at("D1", "20:00")))
     }
 
     // 進行中：焦點=當下任務，帶時間與 duty，並預告下一場

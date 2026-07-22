@@ -49,16 +49,32 @@ enum MissionActivityState {
         return slots.last { $0.date <= now } ?? slots.first
     }
 
-    /// 下一場任務在多久內才值得提前啟動 Live Activity（避免活動前好幾天就一直掛著）。
-    static let lookahead: TimeInterval = 3 * 60 * 60
+    /// 活動日常駐：當天第一場任務前多久就開始顯示 Live Activity。
+    static let dayPreLead: TimeInterval = 60 * 60
 
-    /// 這位人員此刻是否值得顯示 Live Activity：正在進行中，或下一場即將開始。
+    private static var taipeiCalendar: Calendar {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "Asia/Taipei")!
+        return cal
+    }
+
+    /// 這位人員此刻是否該顯示 Live Activity。
+    /// 「活動日常駐」：正在進行中，或處於當天值勤窗（第一場前 `dayPreLead` ～ 最後一場結束）內；
+    /// 當天值勤窗包含任務之間的空檔，所以整個活動日都會常駐，收工後才消失。
     static func hasActiveWork(person: String?, schedule: OfflineSchedule, now: Date) -> Bool {
-        guard let slot = currentSlot(person: person, schedule: schedule, now: now) else { return false }
-        if slot.current != nil { return true }
-        if let next = slot.next {
-            return next.startDate.timeIntervalSince(now) <= lookahead
-        }
-        return false
+        guard let person else { return false }
+        let blocks = BlockBuilder.blocks(for: person, in: schedule.schedule)
+        guard !blocks.isEmpty else { return false }
+
+        // 進行中一定顯示
+        if blocks.contains(where: { $0.startDate <= now && now < $0.endDate }) { return true }
+
+        // 當天（Asia/Taipei）的整段值勤窗
+        let cal = taipeiCalendar
+        let todays = blocks.filter { cal.isDate($0.startDate, inSameDayAs: now) }
+        guard let firstStart = todays.map(\.startDate).min(),
+              let lastEnd = todays.map(\.endDate).max() else { return false }
+
+        return now >= firstStart.addingTimeInterval(-dayPreLead) && now < lastEnd
     }
 }
