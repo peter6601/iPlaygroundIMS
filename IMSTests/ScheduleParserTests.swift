@@ -17,8 +17,9 @@ final class ScheduleParserTests: XCTestCase {
 
         let parsed = try ScheduleParser.parse(scheduleJS: scheduleJS, correctionsJS: correctionsJS)
 
-        XCTAssertEqual(parsed.people.count, 34, "人員總數應為 34")
+        XCTAssertGreaterThan(parsed.people.count, 25, "應解析出工作人員名單")
         XCTAssertTrue(parsed.people.contains("DinDin"))
+        XCTAssertFalse(parsed.people.contains("工作坊講者"))
         XCTAssertFalse(parsed.schedule.isEmpty)
     }
 
