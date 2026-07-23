@@ -53,6 +53,29 @@ final class RosterBuilderTests: XCTestCase {
         XCTAssertEqual(slots.map(\.start), ["9:00", "15:30"])
     }
 
+    // 有 group 欄時，直接用組別分群
+    func testGroupsByXlsxGroup() {
+        let sch = s([
+            RawTask(person: "A", role: "中控室2", day: "D1", start: "15:00", end: "16:00", group: "中控室組"),
+            RawTask(person: "B", role: "計時＋舉牌", day: "D1", start: "15:00", end: "16:00", group: "場內組"),
+            RawTask(person: "C", role: "主持人", day: "D1", start: "15:00", end: "16:00", group: "場內組"),
+        ])
+        let groups = RosterBuilder.roster(day: "D1", start: "15:00", in: sch)
+        let byG = Dictionary(uniqueKeysWithValues: groups.map { ($0.category, $0.people) })
+        XCTAssertEqual(byG["中控室組"], ["A"])
+        XCTAssertEqual(byG["場內組"], ["B", "C"])
+    }
+
+    // 空閒名單：全員扣掉該時段有排到的人
+    func testFreePeople() {
+        var sch = s([
+            raw("A", "中控室2", "D1", "15:00", "16:00"),
+            raw("B", "外場負責人", "D1", "15:00", "16:00"),
+        ])
+        sch = OfflineSchedule(people: ["A", "B", "C", "D"], schedule: sch.schedule)
+        XCTAssertEqual(RosterBuilder.freePeople(day: "D1", start: "15:00", in: sch), ["C", "D"])
+    }
+
     // 職務分類
     func testCategory() {
         XCTAssertEqual(RosterBuilder.category(for: "中控室2"), "中控室")

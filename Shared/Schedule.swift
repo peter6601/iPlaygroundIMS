@@ -15,6 +15,8 @@ struct RawTask: Codable, Hashable {
     let content: String
     let speaker: String
     let title: String
+    /// 所屬組別（workshop組、場內組、中控室組…），來自 xlsx 第一列；corrections 補的任務為空。
+    let group: String
     /// corrections.js 為場務/待補充/場佈任務組好的「去哪做什麼」完整說明；一般議程任務為空。
     let duty: String
     /// corrections.js 標記：工作人員 / 負責人 / 拍照手 / 待補充；一般任務為空。
@@ -23,7 +25,7 @@ struct RawTask: Codable, Hashable {
     let endPending: Bool
 
     enum CodingKeys: String, CodingKey {
-        case person, role, day, start, end, content, speaker, title, duty, assignment, endPending
+        case person, role, day, start, end, content, speaker, title, group, duty, assignment, endPending
     }
 
     init(from decoder: Decoder) throws {
@@ -36,6 +38,7 @@ struct RawTask: Codable, Hashable {
         content = try c.decodeIfPresent(String.self, forKey: .content) ?? ""
         speaker = try c.decodeIfPresent(String.self, forKey: .speaker) ?? ""
         title = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
+        group = try c.decodeIfPresent(String.self, forKey: .group) ?? ""
         duty = try c.decodeIfPresent(String.self, forKey: .duty) ?? ""
         assignment = try c.decodeIfPresent(String.self, forKey: .assignment) ?? ""
         endPending = try c.decodeIfPresent(Bool.self, forKey: .endPending) ?? false
@@ -43,11 +46,11 @@ struct RawTask: Codable, Hashable {
 
     init(person: String, role: String, day: String, start: String, end: String,
          content: String = "", speaker: String = "", title: String = "",
-         duty: String = "", assignment: String = "", endPending: Bool = false) {
+         group: String = "", duty: String = "", assignment: String = "", endPending: Bool = false) {
         self.person = person; self.role = role; self.day = day
         self.start = start; self.end = end
         self.content = content; self.speaker = speaker; self.title = title
-        self.duty = duty; self.assignment = assignment; self.endPending = endPending
+        self.group = group; self.duty = duty; self.assignment = assignment; self.endPending = endPending
     }
 }
 

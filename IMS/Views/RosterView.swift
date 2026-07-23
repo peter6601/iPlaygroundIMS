@@ -6,8 +6,11 @@ struct RosterView: View {
     var onPickPerson: (String) -> Void
     @Environment(\.dismiss) private var dismiss
 
+    enum Mode: String, CaseIterable { case roster = "各組現場", free = "空閒" }
+
     @State private var day = DayInfo.defaultDay()
     @State private var selectedStart: String?
+    @State private var mode: Mode = .roster
 
     private var slots: [RosterSlot] { RosterBuilder.slots(day: day, in: state.schedule) }
     private var current: RosterSlot? {
@@ -17,6 +20,10 @@ struct RosterView: View {
         guard let c = current else { return [] }
         return RosterBuilder.roster(day: day, start: c.start, in: state.schedule)
     }
+    private var free: [String] {
+        guard let c = current else { return [] }
+        return RosterBuilder.freePeople(day: day, start: c.start, in: state.schedule)
+    }
 
     private let chipCols = [GridItem(.adaptive(minimum: 84), spacing: 8)]
 
@@ -25,11 +32,65 @@ struct RosterView: View {
             header
             dayTabs
             slotStrip
+            modePicker
             Divider().overlay(Theme.rule)
-            rosterList
+            if mode == .roster { rosterList } else { freeList }
         }
         .background(Theme.bg.ignoresSafeArea())
         .preferredColorScheme(.dark)
+    }
+
+    private var modePicker: some View {
+        HStack(spacing: 8) {
+            ForEach(Mode.allCases, id: \.self) { m in
+                let active = m == mode
+                Button { mode = m } label: {
+                    Text(m == .free ? "空閒 \(free.count) 人" : m.rawValue)
+                        .font(.mono(13, active ? .bold : .regular))
+                        .foregroundStyle(active ? Theme.bg : Theme.ink2)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 9)
+                        .background(active ? Theme.accent : Theme.surface,
+                                    in: RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 20).padding(.bottom, 12)
+    }
+
+    @ViewBuilder
+    private var freeList: some View {
+        ScrollView {
+            if free.isEmpty {
+                Text("這個時段全員都有排到工作。")
+                    .font(.mono(13)).foregroundStyle(Theme.ink3)
+                    .frame(maxWidth: .infinity).padding(.top, 40)
+            } else {
+                LazyVGrid(columns: chipCols, alignment: .leading, spacing: 8) {
+                    ForEach(free, id: \.self) { person in
+                        personChip(person)
+                    }
+                }
+                .padding(20)
+            }
+        }
+    }
+
+    private func personChip(_ person: String) -> some View {
+        Button {
+            onPickPerson(person)
+            dismiss()
+        } label: {
+            Text(person)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(Theme.ink)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8).padding(.horizontal, 6)
+                .background(Theme.surface2, in: RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
     }
 
     private var header: some View {
@@ -99,19 +160,7 @@ struct RosterView: View {
                                 .font(.mono(12, .heavy)).foregroundStyle(Theme.accent).kerning(1)
                             LazyVGrid(columns: chipCols, alignment: .leading, spacing: 8) {
                                 ForEach(group.people, id: \.self) { person in
-                                    Button {
-                                        onPickPerson(person)
-                                        dismiss()
-                                    } label: {
-                                        Text(person)
-                                            .font(.system(size: 14, weight: .medium))
-                                            .foregroundStyle(Theme.ink)
-                                            .lineLimit(1)
-                                            .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 8).padding(.horizontal, 6)
-                                            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: 10))
-                                    }
-                                    .buttonStyle(.plain)
+                                    personChip(person)
                                 }
                             }
                         }

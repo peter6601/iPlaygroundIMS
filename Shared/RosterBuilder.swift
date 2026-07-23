@@ -40,34 +40,39 @@ enum RosterBuilder {
         return result.sorted { minutes($0.start) < minutes($1.start) }
     }
 
-    /// 指定時段中，各職務群組有哪些人（去重、排序）。
-    static func roster(day: String, start: String, in schedule: OfflineSchedule) -> [RosterGroup] {
+    /// 指定時段中作用中的任務。
+    private static func activeTasks(day: String, start: String, in schedule: OfflineSchedule) -> [RawTask] {
         let atMin = minutes(start)
-        // 該時段作用中的任務：同一天、start <= atMin < end
-        var byCategory: [String: [String]] = [:]
-        var order: [String] = []
-        var seenPerson: [String: Set<String>] = [:]
+        return schedule.schedule.filter { t in
+            t.day == day && !t.role.isEmpty && !t.person.isEmpty && !isBreak(t.content)
+                && minutes(t.start) <= atMin && atMin < minutes(t.end)
+        }
+    }
 
-        for t in schedule.schedule where t.day == day {
-            guard !t.role.isEmpty, !t.person.isEmpty else { continue }
-            let s = minutes(t.start), e = minutes(t.end)
-            guard s <= atMin, atMin < e else { continue }
-            guard !isBreak(t.content) else { continue }
-            let cat = category(for: t.role)
-            if byCategory[cat] == nil {
-                byCategory[cat] = []
-                order.append(cat)
-                seenPerson[cat] = []
-            }
-            if !(seenPerson[cat]?.contains(t.person) ?? false) {
-                seenPerson[cat]?.insert(t.person)
-                byCategory[cat]?.append(t.person)
+    /// 指定時段中，各組別有哪些人（去重、排序）。優先用 xlsx 的組別，沒有就用職務分類。
+    static func roster(day: String, start: String, in schedule: OfflineSchedule) -> [RosterGroup] {
+        var byGroup: [String: [String]] = [:]
+        var order: [String] = []
+        var seen: [String: Set<String>] = [:]
+
+        for t in activeTasks(day: day, start: start, in: schedule) {
+            let g = t.group.isEmpty ? category(for: t.role) : t.group
+            if byGroup[g] == nil { byGroup[g] = []; order.append(g); seen[g] = [] }
+            if !(seen[g]?.contains(t.person) ?? false) {
+                seen[g]?.insert(t.person)
+                byGroup[g]?.append(t.person)
             }
         }
 
         return order
-            .sorted { categoryRank($0) < categoryRank($1) }
-            .map { RosterGroup(category: $0, people: byCategory[$0]!.sorted()) }
+            .sorted { groupRank($0) < groupRank($1) }
+            .map { RosterGroup(category: $0, people: byGroup[$0]!.sorted()) }
+    }
+
+    /// 指定時段中「沒有排到任何工作」的人員（可用來掌握誰有空）。
+    static func freePeople(day: String, start: String, in schedule: OfflineSchedule) -> [String] {
+        let busy = Set(activeTasks(day: day, start: start, in: schedule).map(\.person))
+        return schedule.people.filter { !busy.contains($0) }.sorted()
     }
 
     private static func isBreak(_ content: String) -> Bool {
@@ -94,11 +99,12 @@ enum RosterBuilder {
         return role
     }
 
-    private static let rankOrder = ["負責人", "主持人", "中控室", "計時／舉牌", "櫃檯",
-                                    "便當組", "講者便當", "攝影", "後製", "採訪", "共筆",
-                                    "工作坊", "活動", "講者"]
+    // 組別顯示順序（現場動線相關的先）。
+    private static let groupOrder = ["總指揮", "中控組", "中控室組", "場內組", "內場＋workshop",
+                                     "場外組", "外場＋採訪", "採訪組", "攝影組", "便當組",
+                                     "workshop組", "工作坊", "活動"]
 
-    private static func categoryRank(_ cat: String) -> Int {
-        rankOrder.firstIndex(of: cat) ?? rankOrder.count
+    private static func groupRank(_ g: String) -> Int {
+        groupOrder.firstIndex(of: g) ?? groupOrder.count
     }
 }
