@@ -4,7 +4,6 @@ import SwiftUI
 struct TaskTimelineView: View {
     let state: AppState
     @State private var day: String = DayInfo.defaultDay()
-    @State private var showRoster = false
 
     private var person: String { state.selectedPerson ?? "" }
 
@@ -33,9 +32,6 @@ struct TaskTimelineView: View {
             .padding(20)
         }
         .refreshable { await state.refresh() }
-        .sheet(isPresented: $showRoster) {
-            RosterView(state: state, onPickPerson: { state.select($0) })
-        }
     }
 
     // MARK: - Sections
@@ -52,15 +48,6 @@ struct TaskTimelineView: View {
                 .foregroundStyle(Theme.ink2)
             }
             Spacer()
-            Button {
-                showRoster = true
-            } label: {
-                HStack(spacing: 5) {
-                    Image(systemName: "person.2.fill").font(.system(size: 12))
-                    Text("現場全覽").font(.mono(13, .medium))
-                }
-                .foregroundStyle(Theme.accent)
-            }
         }
     }
 

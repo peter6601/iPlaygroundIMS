@@ -42,26 +42,41 @@ struct IMSApp: App {
 
 struct RootView: View {
     let state: AppState
+    @State private var tab = 0
 
     var body: some View {
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["IMS_PREVIEW_BANNER"] != nil {
+            LiveActivityPreviewScreen()
+        } else if ProcessInfo.processInfo.environment["IMS_SHOW_ROSTER"] != nil {
+            RosterView(state: state, onPickPerson: { _ in })
+        } else {
+            tabs
+        }
+        #else
+        tabs
+        #endif
+    }
+
+    private var tabs: some View {
+        TabView(selection: $tab) {
+            taskFlow
+                .tabItem { Label("我的任務", systemImage: "checklist") }
+                .tag(0)
+            RosterView(state: state, onPickPerson: { state.select($0); tab = 0 })
+                .tabItem { Label("現場全覽", systemImage: "person.2.fill") }
+                .tag(1)
+        }
+        .tint(Theme.accent)
+    }
+
+    private var taskFlow: some View {
         Group {
-            #if DEBUG
-            if ProcessInfo.processInfo.environment["IMS_PREVIEW_BANNER"] != nil {
-                LiveActivityPreviewScreen()
-            } else if ProcessInfo.processInfo.environment["IMS_SHOW_ROSTER"] != nil {
-                RosterView(state: state, onPickPerson: { _ in })
-            } else if state.selectedPerson == nil {
-                PersonPickerView(state: state)
-            } else {
-                TaskTimelineView(state: state)
-            }
-            #else
             if state.selectedPerson == nil {
                 PersonPickerView(state: state)
             } else {
                 TaskTimelineView(state: state)
             }
-            #endif
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.bg.ignoresSafeArea())

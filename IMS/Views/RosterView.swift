@@ -4,7 +4,6 @@ import SwiftUI
 struct RosterView: View {
     let state: AppState
     var onPickPerson: (String) -> Void
-    @Environment(\.dismiss) private var dismiss
 
     enum Mode: String, CaseIterable { case roster = "各組現場", free = "空閒" }
 
@@ -80,7 +79,6 @@ struct RosterView: View {
     private func personChip(_ person: String) -> some View {
         Button {
             onPickPerson(person)
-            dismiss()
         } label: {
             Text(person)
                 .font(.system(size: 14, weight: .medium))
@@ -100,9 +98,6 @@ struct RosterView: View {
                 Text("選時段看各職務有誰").font(.mono(11)).foregroundStyle(Theme.ink3)
             }
             Spacer()
-            Button { dismiss() } label: {
-                Image(systemName: "xmark.circle.fill").font(.system(size: 24)).foregroundStyle(Theme.ink3)
-            }
         }
         .padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 12)
     }
