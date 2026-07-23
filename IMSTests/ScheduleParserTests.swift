@@ -23,16 +23,16 @@ final class ScheduleParserTests: XCTestCase {
         XCTAssertFalse(parsed.schedule.isEmpty)
     }
 
-    /// corrections.js 會把原始 D1/D2 排班中非講者的 Ethan 改名為 ggt。
-    /// 若 corrections 沒有執行，schedule 裡不會出現任何 ggt。
+    /// corrections.js 會補上 D0 場佈任務（role 以「場佈｜」開頭）。
+    /// 若 corrections 沒有執行，schedule 裡不會有這些任務。
     func testCorrectionsAreApplied() throws {
         let scheduleJS = try fixture("schedule.bundle")
         let correctionsJS = try fixture("corrections.bundle")
 
         let parsed = try ScheduleParser.parse(scheduleJS: scheduleJS, correctionsJS: correctionsJS)
 
-        XCTAssertTrue(parsed.schedule.contains { $0.person == "ggt" },
-                      "corrections.js 應已將部分 Ethan 改名為 ggt")
+        XCTAssertTrue(parsed.schedule.contains { $0.role.hasPrefix("場佈｜") },
+                      "corrections.js 應補上 D0 場佈任務")
     }
 
     /// corrections.js 執行失敗時，仍應能只用 schedule.js 解析成功。
@@ -44,8 +44,8 @@ final class ScheduleParserTests: XCTestCase {
 
         XCTAssertTrue(parsed.people.contains("DinDin"))
         XCTAssertFalse(parsed.schedule.isEmpty)
-        // 未套修正 → 不應出現 ggt
-        XCTAssertFalse(parsed.schedule.contains { $0.person == "ggt" })
+        // 未套修正 → 不應有 D0 場佈任務
+        XCTAssertFalse(parsed.schedule.contains { $0.role.hasPrefix("場佈｜") })
     }
 
     /// corrections.js 會產生 sideMissions，以及帶 duty 字串的場務任務。

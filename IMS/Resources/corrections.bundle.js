@@ -4,11 +4,8 @@
   var source = window.OFFLINE_SCHEDULE;
   if (!source) return;
 
-  source.schedule.forEach(function (task) {
-    if (String(task.person).toLowerCase() === "ethan" && task.role !== "講者") {
-      task.person = "ggt";
-    }
-  });
+  // 註：原本把非講者的 Ethan 改名為 "ggt" 的邏輯已移除——
+  // xlsx 用的就是 Ethan，改名只會讓現場全覽顯示 "ggt" 又害 Ethan 被當空閒。
 
   var missingTasks = [
     { person: "Minkyung Kim", role: "講者", day: "D1", start: "9:40", end: "10:20", content: "session(40)", speaker: "Minkyung Kim", title: "Designing Adaptive UX Through Learning Theory & AI", row: 5 },
@@ -119,7 +116,7 @@
 
   source.sideMissions = [
     { person: "DinDin", title: "準備倒數工具", detail: "準備倒數小工具與倒數用途；工具限制 iOS 26 以上，並以原生計時器作為備案。" },
-    { person: "ggt", title: "攜帶 iPad 完成演練", detail: "活動前一天記得帶 iPad，進行倒數工具演練並安裝 App。" },
+    { person: "Ethan", title: "攜帶 iPad 完成演練", detail: "活動前一天記得帶 iPad，進行倒數工具演練並安裝 App。" },
     { person: "Jeff", title: "倒數工具操作 Demo", detail: "向工作人員示範倒數工具的操作方式與注意事項。" },
     { person: "UJ", title: "安排講者投影測試", detail: "7/24 19:00 起篩選可測試的講者並安排排隊；每位每次限時 10 分鐘，逾時需重新排隊。" },
     { person: "UJ", title: "確認講者公用電腦", detail: "確認所有講者投影片已備妥；記得攜帶 Hub，並安裝 PowerPoint、Figma。" },
