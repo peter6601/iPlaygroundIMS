@@ -41,10 +41,11 @@ enum RosterBuilder {
     }
 
     /// 指定時段中作用中的任務。
+    /// 註：中場休息（content 為「休息(10)」）不排除——工作人員仍在崗位上，只是議程在休息。
     private static func activeTasks(day: String, start: String, in schedule: OfflineSchedule) -> [RawTask] {
         let atMin = minutes(start)
         return schedule.schedule.filter { t in
-            t.day == day && !t.role.isEmpty && !t.person.isEmpty && !isBreak(t.content)
+            t.day == day && !t.role.isEmpty && !t.person.isEmpty
                 && minutes(t.start) <= atMin && atMin < minutes(t.end)
         }
     }
@@ -73,10 +74,6 @@ enum RosterBuilder {
     static func freePeople(day: String, start: String, in schedule: OfflineSchedule) -> [String] {
         let busy = Set(activeTasks(day: day, start: start, in: schedule).map(\.person))
         return schedule.people.filter { !busy.contains($0) }.sorted()
-    }
-
-    private static func isBreak(_ content: String) -> Bool {
-        content.trimmingCharacters(in: .whitespaces) == "休息(10)"
     }
 
     /// 把細分職務歸類成好讀的群組。

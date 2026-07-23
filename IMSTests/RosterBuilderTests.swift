@@ -36,10 +36,11 @@ final class RosterBuilderTests: XCTestCase {
         XCTAssertFalse(RosterBuilder.roster(day: "D1", start: "15:30", in: sch).isEmpty)
     }
 
-    // 休息時段的內容不列入
-    func testSkipsBreaks() {
+    // 中場休息時，工作人員仍在崗位上，職務照樣列出
+    func testKeepsBreakAssignments() {
         let sch = s([raw("A", "中控室2", "D1", "15:00", "15:10", content: "休息(10)")])
-        XCTAssertTrue(RosterBuilder.roster(day: "D1", start: "15:00", in: sch).isEmpty)
+        let groups = RosterBuilder.roster(day: "D1", start: "15:00", in: sch)
+        XCTAssertEqual(groups.first?.people, ["A"])
     }
 
     // 時段清單去重、排序
